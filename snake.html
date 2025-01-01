@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snake Game</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: black;
+      font-family: Arial, sans-serif;
+      color: white;
+    }
+
+    #gameCanvas {
+      background-color: black;
+      border: 2px solid white;
+    }
+
+    #score {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 20px;
+    }
+
+    #restartButton {
+      margin-top: 10px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <canvas id="gameCanvas" width="320" height="320"></canvas>
+    <div id="score">Score: 0</div>
+    <button id="restartButton" onclick="restartGame()">Restart</button>
+  </div>
+
+  <script>
+    const CELL_SIZE = 40;
+    const GRID_WIDTH = 8;
+    const GRID_HEIGHT = 8;
+    const GAME_SPEED = 220;
+
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const scoreDisplay = document.getElementById("score");
+    const restartButton = document.getElementById("restartButton");
+
+    let snake, food, direction, score, running, gameInterval;
+
+    function initGame() {
+      snake = [{ x: 1, y: 3 }];
+      food = placeFood();
+      direction = { x: 1, y: 0 };
+      score = 0;
+      running = true;
+      scoreDisplay.textContent = "Score: " + score;
+      restartButton.style.display = "none";
+      gameInterval = setInterval(updateGame, GAME_SPEED);
+    }
+
+    function placeFood() {
+      let foodX, foodY;
+      do {
+        foodX = Math.floor(Math.random() * GRID_WIDTH);
+        foodY = Math.floor(Math.random() * GRID_HEIGHT);
+      } while (snake.some(segment => segment.x === foodX && segment.y === foodY));
+      return { x: foodX, y: foodY };
+    }
+
+    function drawCell(x, y, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+    }
+
+    function drawGame() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw snake
+      snake.forEach(segment => drawCell(segment.x, segment.y, "green"));
+
+      // Draw food
+      drawCell(food.x, food.y, "red");
+    }
+
+    function updateGame() {
+      if (!running) return;
+
+      // Calculate new head position
+      const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+
+      // Check collision
+      if (
+        head.x < 0 || head.x >= GRID_WIDTH ||
+        head.y < 0 || head.y >= GRID_HEIGHT ||
+        snake.some(segment => segment.x === head.x && segment.y === head.y)
+      ) {
+        gameOver();
+        return;
+      }
+
+      // Move snake
+      snake.unshift(head);
+      if (head.x === food.x && head.y === food.y) {
+        score++;
+        scoreDisplay.textContent = "Score: " + score;
+        food = placeFood();
+      } else {
+        snake.pop();
+      }
+
+      // Check win condition
+      if (snake.length === Math.floor(GRID_WIDTH * GRID_HEIGHT / 4)) {
+        gameWon();
+        return;
+      }
+
+      drawGame();
+    }
+
+    function gameOver() {
+      clearInterval(gameInterval);
+      running = false;
+      ctx.fillStyle = "white";
+      ctx.font = "24px Arial";
+      ctx.fillText("GAME OVER", canvas.width / 2 - 70, canvas.height / 2);
+      ctx.fillText(`Final Score: ${score}`, canvas.width / 2 - 80, canvas.height / 2 + 30);
+      restartButton.style.display = "block";
+    }
+
+    function gameWon() {
+      clearInterval(gameInterval);
+      running = false;
+      ctx.fillStyle = "yellow";
+      ctx.font = "24px Arial";
+      ctx.fillText("YAY! KODEN ER 456", canvas.width / 2 - 110, canvas.height / 2);
+      ctx.fillText(`Final Score: ${score}`, canvas.width / 2 - 80, canvas.height / 2 + 30);
+      restartButton.style.display = "block";
+    }
+
+    function restartGame() {
+      initGame();
+    }
+
+    document.addEventListener("keydown", event => {
+      const keyMap = {
+        ArrowUp: { x: 0, y: -1 },
+        ArrowDown: { x: 0, y: 1 },
+        ArrowLeft: { x: -1, y: 0 },
+        ArrowRight: { x: 1, y: 0 }
+      };
+      const newDirection = keyMap[event.key];
+      if (newDirection) {
+        const opposite = { x: -direction.x, y: -direction.y };
+        if (newDirection.x !== opposite.x || newDirection.y !== opposite.y) {
+          direction = newDirection;
+        }
+      }
+    });
+
+    initGame();
+  </script>
+</body>
+</html>
